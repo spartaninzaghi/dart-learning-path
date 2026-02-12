@@ -5,8 +5,8 @@ import 'dart:io';
 import 'arguments.dart';
 import 'exceptions.dart';
 
+/// Class for running CLI commands
 class CommandRunner {
-
   CommandRunner({this.onError});
 
   final Map<String, Command> _commands = <String, Command>{};
@@ -17,7 +17,6 @@ class CommandRunner {
   FutureOr<void> Function(Object)? onError;
 
   Future<void> run(List<String> input) async {
-
     try {
       final ArgResults results = parse(input);
       if (results.command != null) {
@@ -59,11 +58,11 @@ class CommandRunner {
     if (results.command != null &&
         input.isNotEmpty &&
         _commands.containsKey(input.first)) {
-          throw ArgumentException(
-              'Input can only contain one command. got ${input.first} and ${results.command!.name}',
-              null,
-              input.first,
-          );
+      throw ArgumentException(
+        'Input can only contain one command. got ${input.first} and ${results.command!.name}',
+        null,
+        input.first,
+      );
     }
 
     // Handle Options (including flags)
@@ -74,14 +73,14 @@ class CommandRunner {
         var base = _removeDash(input[i]);
         // Throw an exception if an option is not recognized for the given command.
         var option = results.command!.options.firstWhere(
-            (option) => option.name == base || option.abbr == base,
-            orElse: () {
-                throw ArgumentException(
-                  'Unknown option ${input[i]}',
-                  results.command!.name,
-                  input[i],
-                );
-            },
+          (option) => option.name == base || option.abbr == base,
+          orElse: () {
+            throw ArgumentException(
+              'Unknown option ${input[i]}',
+              results.command!.name,
+              input[i],
+            );
+          },
         );
 
         if (option.type == OptionType.flag) {
@@ -91,53 +90,52 @@ class CommandRunner {
         }
 
         if (option.type == OptionType.option) {
-        // Throw an exception if an option requires an arguent but none is given.
-            if  (i + 1 >= input.length) {
-                throw ArgumentException(
-                    'Option ${option.name} requires an argument',
-                    results.command!.name,
-                    option.name,
-                );
-            }
-            if (input[i+1].startsWith('-')) {
-              throw ArgumentException(
-                  'Option ${option.name} requires an argument, but got another option ${input[i+1]}',
-                  results.command!.name,
-                  option.name,
-              );
-            }
-            var arg = input[i + 1];
-            inputOptions[option] = arg;
-            i++;
-        } else {
+          // Throw an exception if an option requires an arguent but none is given.
+          if (i + 1 >= input.length) {
+            throw ArgumentException(
+              'Option ${option.name} requires an argument',
+              results.command!.name,
+              option.name,
+            );
+          }
+          if (input[i + 1].startsWith('-')) {
+            throw ArgumentException(
+              'Option ${option.name} requires an argument, but got another option ${input[i + 1]}',
+              results.command!.name,
+              option.name,
+            );
+          }
+          var arg = input[i + 1];
+          inputOptions[option] = arg;
+          i++;
+        }
+      } else {
           // Throw an exception if more than one positional argument is provided.
           if (results.commandArg != null && results.commandArg!.isNotEmpty) {
-              throw ArgumentException(
-                  'Commands can only have up to one argument.',
-                  results.command!.name,
-                  input[i],
-              );
+            throw ArgumentException(
+              'Commands can only have up to one argument.',
+              results.command!.name,
+              input[i],
+            );
           }
           results.commandArg = input[i];
         }
-        i++;
-      }
+      i++;
     }
     results.options = inputOptions;
-    
-    return results;
-    
-  }
-  String _removeDash(String input) {
-      if (input.startsWith('--')) {
-        return input.substring(2);
-      }
-      if (input.startsWith('-')) {
-        return input.substring(1);
-      }
-      return input;
-    }
 
+    return results;
+  }
+
+  String _removeDash(String input) {
+    if (input.startsWith('--')) {
+      return input.substring(2);
+    }
+    if (input.startsWith('-')) {
+      return input.substring(1);
+    }
+    return input;
+  }
 
   // Returns usage for the dexecutable only.
   // Should be overriden if you aren't using [HelpCommand]
